@@ -1,4 +1,4 @@
-# 🏭 Factory Floor Anomaly Detector
+#  Factory Floor Anomaly Detector
 
 Containerized IoT pipeline that detects CNC machine failures before they occur using physics-based rules on real sensor data.
 
@@ -7,7 +7,7 @@ Containerized IoT pipeline that detects CNC machine failures before they occur u
 
 ---
 
-## 🏗️ Pipeline
+##  Pipeline
 
 ```
 CSV → Publisher → Mosquitto → Telegraf → InfluxDB → Grafana
@@ -15,7 +15,7 @@ CSV → Publisher → Mosquitto → Telegraf → InfluxDB → Grafana
 
 ---
 
-## 🔬 What It Detects
+##  What It Detects
 
 4 physics-based detectors, each with NORMAL → WARNING → CRITICAL states:
 
@@ -30,7 +30,7 @@ When multiple fire simultaneously → most dangerous wins.
 
 ---
 
-## 🚀 Run
+##  Run
 
 ```bash
 # Add dataset first
@@ -60,7 +60,7 @@ python publisher/test_detector.py --sanity
 
 ---
 
-## 📁 Structure
+##  Structure
 
 ```
 ├── docker-compose.yml
