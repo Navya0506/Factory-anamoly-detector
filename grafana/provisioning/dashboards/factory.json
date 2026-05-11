@@ -1,0 +1,189 @@
+{
+  "title": "Factory Floor Anomaly Detector",
+  "uid": "factory-anomaly-v1",
+  "timezone": "browser",
+  "refresh": "5s",
+  "time": { "from": "now-1h", "to": "now" },
+  "panels": [
+
+    {
+      "id": 1,
+      "title": "RPM — Rotational Speed",
+      "description": "Spindle speed over time. PWF warning fires when power (torque x rpm) exceeds 9000W or drops below 3500W.",
+      "type": "timeseries",
+      "gridPos": { "x": 0, "y": 0, "w": 12, "h": 8 },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "unit": "rpm",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 1380 },
+              { "color": "red", "value": 1400 }
+            ]
+          }
+        }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": { "type": "influxdb" },
+          "query": "from(bucket: \"sensor_data\")\n  |> range(start: -1h)\n  |> filter(fn: (r) => r._measurement == \"sensor\")\n  |> filter(fn: (r) => r._field == \"rpm\")\n  |> aggregateWindow(every: 10s, fn: mean, createEmpty: false)"
+        }
+      ]
+    },
+
+    {
+      "id": 2,
+      "title": "Torque (Nm)",
+      "description": "Machine torque. High torque combined with high tool wear triggers OSF (Overstrain Failure).",
+      "type": "timeseries",
+      "gridPos": { "x": 12, "y": 0, "w": 12, "h": 8 },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "unit": "Nm"
+        }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": { "type": "influxdb" },
+          "query": "from(bucket: \"sensor_data\")\n  |> range(start: -1h)\n  |> filter(fn: (r) => r._measurement == \"sensor\")\n  |> filter(fn: (r) => r._field == \"torque_nm\")\n  |> aggregateWindow(every: 10s, fn: mean, createEmpty: false)"
+        }
+      ]
+    },
+
+    {
+      "id": 3,
+      "title": "Process Temperature (K)",
+      "description": "Machine cutting temperature. HDF fires when temp delta (process - air) drops below 8.6K AND rpm below 1380.",
+      "type": "timeseries",
+      "gridPos": { "x": 0, "y": 8, "w": 12, "h": 8 },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "unit": "kelvin"
+        }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": { "type": "influxdb" },
+          "query": "from(bucket: \"sensor_data\")\n  |> range(start: -1h)\n  |> filter(fn: (r) => r._measurement == \"sensor\")\n  |> filter(fn: (r) => r._field == \"process_temp_k\")\n  |> aggregateWindow(every: 10s, fn: mean, createEmpty: false)"
+        }
+      ]
+    },
+
+    {
+      "id": 4,
+      "title": "Tool Wear (minutes)",
+      "description": "Cumulative tool wear. TWF warning at 200 min, critical at 220 min — tool fracture imminent.",
+      "type": "timeseries",
+      "gridPos": { "x": 12, "y": 8, "w": 12, "h": 8 },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "unit": "m",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green",  "value": null },
+              { "color": "yellow", "value": 200 },
+              { "color": "red",    "value": 220 }
+            ]
+          }
+        }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": { "type": "influxdb" },
+          "query": "from(bucket: \"sensor_data\")\n  |> range(start: -1h)\n  |> filter(fn: (r) => r._measurement == \"sensor\")\n  |> filter(fn: (r) => r._field == \"tool_wear_min\")\n  |> aggregateWindow(every: 10s, fn: mean, createEmpty: false)"
+        }
+      ]
+    },
+
+    {
+      "id": 5,
+      "title": "Early Warnings Issued",
+      "description": "Count of rows where our detector fired WARNING or CRITICAL but actual_failure was still 0. This is our proof of value — catching failures before they happen.",
+      "type": "stat",
+      "gridPos": { "x": 0, "y": 16, "w": 6, "h": 5 },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 1 },
+              { "color": "red", "value": 50 }
+            ]
+          }
+        }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": { "type": "influxdb" },
+          "query": "from(bucket: \"sensor_data\")\n  |> range(start: -1h)\n  |> filter(fn: (r) => r._measurement == \"alert\")\n  |> filter(fn: (r) => r._field == \"early_warning\")\n  |> filter(fn: (r) => r._value == 1)\n  |> count()"
+        }
+      ]
+    },
+
+    {
+      "id": 6,
+      "title": "Actual Failures in Dataset",
+      "description": "Count of rows where machine_failure = 1 in the AI4I dataset. Compare this against early warnings to see how many we caught in advance.",
+      "type": "stat",
+      "gridPos": { "x": 6, "y": 16, "w": 6, "h": 5 },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "red", "value": 1 }
+            ]
+          }
+        }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": { "type": "influxdb" },
+          "query": "from(bucket: \"sensor_data\")\n  |> range(start: -1h)\n  |> filter(fn: (r) => r._measurement == \"alert\")\n  |> filter(fn: (r) => r._field == \"actual_failure\")\n  |> filter(fn: (r) => r._value == 1)\n  |> count()"
+        }
+      ]
+    },
+
+    {
+      "id": 7,
+      "title": "Active Alerts — Latest",
+      "description": "Most recent WARNING and CRITICAL alerts with failure type and message.",
+      "type": "table",
+      "gridPos": { "x": 12, "y": 16, "w": 12, "h": 5 },
+      "fieldConfig": {
+        "defaults": { "color": { "mode": "thresholds" } }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": { "type": "influxdb" },
+          "query": "from(bucket: \"sensor_data\")\n  |> range(start: -1h)\n  |> filter(fn: (r) => r._measurement == \"alert\")\n  |> filter(fn: (r) => r._field == \"early_warning\")\n  |> tail(n: 20)"
+        }
+      ]
+    }
+
+  ],
+  "schemaVersion": 36,
+  "version": 1
+}

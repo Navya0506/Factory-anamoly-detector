@@ -1,0 +1,33 @@
+# influxdb.yml
+# ============
+# This file tells Grafana:
+#   - There is a database called InfluxDB
+#   - Here is its address and token
+#   - Connect to it automatically on startup
+#
+# Without this file you would have to click through
+# Grafana UI manually every time the container restarts
+
+apiVersion: 1
+
+datasources:
+  - name: InfluxDB
+    type: influxdb
+    access: proxy
+    url: http://influxdb:8086
+
+    # Which query language to use
+    # Flux is InfluxDB's modern query language — more powerful than InfluxQL
+    jsonData:
+      version: Flux
+      organization: factory
+      defaultBucket: sensor_data
+      tlsSkipVerify: true
+
+    # Token to authenticate with InfluxDB
+    # Must match DOCKER_INFLUXDB_INIT_ADMIN_TOKEN in docker-compose.yml
+    secureJsonData:
+      token: factory-super-secret-token
+
+    isDefault: true
+    editable: true
